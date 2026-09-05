@@ -1,28 +1,40 @@
 # Bociaust
 
-Pokazowy prototyp gry inspirowanej Joust: bocian, bezwładny lot i sześć platform nad rozlewiskiem. Bez przeciwników i punktacji.
+Spokojna gra przeglądarkowa inspirowana Joust. Bocian zbiera po jednym jajku, kwiatku lub żabie z każdej z sześciu platform. Wyprawa obejmuje 100 poziomów i 600 przedmiotów. Bez przeciwników, limitu czasu i utraty żyć.
 
-## Uruchomienie
+## Uruchomienie i publikacja
 
-Otwórz `index.html` w przeglądarce. Nie wymaga instalacji ani budowania projektu. Fonty Google są opcjonalne; bez internetu aplikacja używa fontów systemowych.
+Otwórz `index.html` w przeglądarce. Bez instalacji i budowania. Google Fonts są opcjonalne; offline działają fonty systemowe.
 
-## Sterowanie
+Na GitHub Pages umieść razem: `index.html`, `style.css`, **`levels.js`** i `game.js`. Plik `levels.js` jest nowym, wymaganym elementem gry. W repozytorium ustaw Settings → Pages → Deploy from a branch → main → / (root).
 
-- **A / D lub ← / →** — lot w lewo i w prawo.
-- **Spacja** — machnięcie skrzydłami; przytrzymanie powtarza machnięcia.
-- **P / Escape** — pauza i wznowienie.
-- **Od nowa** — powrót do gniazda.
-- Na telefonie dostępne są przyciski dotykowe.
-- **Dźwięk wł./wył.** — wycisza efekty. Każde machnięcie odtwarza krótki szum, a odbicie od platformy dodatkowy wznoszący ton. Dźwięk uruchamia się po rozpoczęciu gry; pauza go przerywa.
+## Zasady i sterowanie
 
-Platformy przepuszczają bociana od dołu i zatrzymują przy opadaniu. Bocian przelatuje przez boczne krawędzie ekranu. Spadek poniżej sceny przenosi go do gniazda. Utrata fokusu okna automatycznie wstrzymuje grę.
+- **A/D lub ←/→** — kierunek lotu z bezwładnością.
+- **Spacja** — machnięcie skrzydłami; przytrzymanie powtarza ruch.
+- Dotknij bocianem przedmiotu na wyspie, aby go zebrać. Możesz wylądować lub zebrać go w locie.
+- Po komplecie 6/6 pojawia się czas poziomu i suma czasów ukończonych poziomów. Następny poziom zaczyna się automatycznie po 3,5 s; przycisk pozwala przejść od razu.
+- **P/Escape** — pauza; zatrzymuje również odliczanie do kolejnego poziomu. Utrata fokusu okna także pauzuje grę.
+- **Powtórz poziom** — reset przedmiotów i czasu bieżącego poziomu, z zachowaniem jego układu i poprzednich wyników. Nie działa podczas podsumowania.
+- Upadek przenosi do gniazda i zachowuje zebrane przedmioty oraz czas. Boczne krawędzie zawijają lot.
+- **Dźwięk wł./wył.** — efekty skrzydeł, oderwania i zbierania. Każdy rodzaj przedmiotu ma inną wysokość dźwięku, ostatni przedmiot daje dłuższą melodię.
+- Na telefonie działają przyciski dotykowe.
 
-## Technologia
+Po poziomie 100 gra pokazuje łączny i średni czas. Przycisk „Nowa wyprawa” losuje nową kampanię od poziomu 1. Wynik oznacza czas aktywnej symulacji — bez pauz i podsumowań. Postęp jest przechowywany w pamięci: odświeżenie strony rozpoczyna nową wyprawę.
 
-Native JavaScript + Canvas 2D + CSS. Na ten zakres framework i silnik gry dodawałyby zbędne zależności. Grafika jest rysowana proceduralnie, bez zewnętrznych obrazów. Fizyka ma stały krok 1/120 s, niezależny od częstotliwości odświeżania ekranu. `game.js` zawiera scenę, fizykę, rysowanie i wejście; `style.css` odpowiada za stronę i układ mobilny.
+## Losowanie
 
-Efekty dźwiękowe są syntezowane przez Web Audio API, bez plików audio i dodatkowych zależności. Brak obsługi audio nie blokuje gry. Dźwięk oderwania jest wyzwalany przez machnięcie na platformie, nie przez samo zsunięcie się z krawędzi.
+`levels.js` generuje plansze z ziarna wyprawy i numeru poziomu, dzięki czemu powtórzenie poziomu zachowuje układ. Poziom 1 ma bazową geometrię. Kolejne poziomy lekko przesuwają wyspy (do ±40 px poziomo i ±15 px pionowo), zmieniają szerokość do ±10 px i czasem odbijają układ poziomo.
 
-## Weryfikacja
+Każdy kandydat przechodzi kontrolę granic, minimalnej szerokości 130 px i odstępu: co najmniej 35 px w poziomie lub 110 px w pionie. Po maksymalnie 40 próbach generator korzysta ze sprawdzonego układu bazowego. Platformy są nieruchome i przepuszczają bociana od dołu; ciągłe machanie pozwala dotrzeć na każdą wysokość.
 
-`node game.test.cjs` sprawdza lot, lądowanie na wszystkich platformach, przechodzenie od dołu, pauzę, zawijanie i powrót do gniazda. Test używa atrapy Canvas; nie zastępuje sprawdzenia wyglądu i sterowania dotykowego w przeglądarce.
+Osiem biomów losuje się w tasowanych pulach: każda paleta występuje raz w puli, bez sąsiednich powtórzeń także na granicy pul. Biomy zmieniają niebo, wzgórza, słońce, trawę i akcenty przedmiotów. Co dziesiąty poziom ma złoty komplet jednego rodzaju przedmiotów. Nie zmienia to sterowania ani wymagań.
+
+## Technologia i testy
+
+Czysty JavaScript, Canvas 2D i Web Audio API. Brak bibliotek wykonawczych, zewnętrznych obrazów i plików audio. Fizyka ma stały krok 1/120 s. Audio uruchamia się po interakcji użytkownika, a brak jego obsługi nie blokuje rozgrywki.
+
+- `node game.test.cjs` — fizyka, kolizje, audio, jednorazowe zbieranie, reset, pauza, pełny przebieg poziomów 1–100 i finał.
+- `node levels.test.cjs` — 20 000 układów: granice, odstępy, miejsce startu, przedmioty, powtarzalność i różnorodność biomów.
+
+Testy symulacji używają atrap Canvas i Web Audio. Nie zastępują odsłuchu i wizualnego sprawdzenia w przeglądarce ani testu dotyku na telefonie.
