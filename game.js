@@ -6,6 +6,79 @@
   const status = document.querySelector('#status');
   const altitude = document.querySelector('#altitude b');
   const pauseButton = document.querySelector('#pause');
+  const soundButton = document.querySelector('#sound');
+  // Create audio only after a user gesture (also works on touch devices).
+  let audioContext, masterGain, wingNoise, muted = false;
+  const voices = new Set();
+  function unlockAudio() {
+    if (muted) return;
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) return;
+    try {
+      if (!audioContext) {
+        audioContext = new Audio();
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = .45;
+        masterGain.connect(audioContext.destination);
+        wingNoise = audioContext.createBuffer(1, Math.ceil(audioContext.sampleRate * .3), audioContext.sampleRate);
+        const data = wingNoise.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      }
+      if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+    } catch { /* Audio is optional; playback restrictions must not stop the game. */ }
+  }
+  function stopSounds() {
+    for (const source of voices) {
+      source.stop();
+      source.disconnect();
+    }
+    voices.clear();
+  }
+  function playWingSound(takeoff) {
+    if (muted || !wingNoise || audioContext.state !== 'running') return;
+    const now = audioContext.currentTime;
+    const duration = takeoff ? .24 : .14;
+    const source = audioContext.createBufferSource();
+    source.buffer = wingNoise;
+    source.playbackRate.value = .94 + Math.random() * .12;
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = .65;
+    filter.frequency.setValueAtTime(takeoff ? 1300 : 950, now);
+    filter.frequency.exponentialRampToValueAtTime(220, now + duration);
+    const gain = audioContext.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(takeoff ? .5 : .3, now + .018);
+    gain.gain.exponentialRampToValueAtTime(.001, now + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(masterGain);
+    voices.add(source);
+    source.onended = () => { voices.delete(source); source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    source.start(now); source.stop(now + duration);
+    if (takeoff) {
+      // A soft, rising pulse distinguishes the push away from the platform.
+      const pulse = audioContext.createOscillator();
+      const envelope = audioContext.createGain();
+      pulse.type = 'sine';
+      pulse.frequency.setValueAtTime(145, now);
+      pulse.frequency.exponentialRampToValueAtTime(310, now + .14);
+      envelope.gain.setValueAtTime(0, now);
+      envelope.gain.linearRampToValueAtTime(.19, now + .012);
+      envelope.gain.exponentialRampToValueAtTime(.001, now + .18);
+      pulse.connect(envelope); envelope.connect(masterGain);
+      voices.add(pulse);
+      pulse.onended = () => { voices.delete(pulse); pulse.disconnect(); envelope.disconnect(); };
+      pulse.start(now); pulse.stop(now + .19);
+    }
+  }
+  soundButton.addEventListener('click', () => {
+    muted = !muted;
+    if (muted) stopSounds(); else unlockAudio();
+    if (masterGain) masterGain.gain.value = muted ? 0 : .45;
+    soundButton.innerHTML = muted ? '♫ <span>Dźwięk wył.</span>' : '♫ <span>Dźwięk wł.</span>';
+    soundButton.setAttribute('aria-pressed', String(muted));
+    soundButton.setAttribute('aria-label', muted ? 'Włącz dźwięk' : 'Wycisz dźwięk');
+    canvas.focus({preventScroll:true});
+  });
   const W = 1200, H = 580;
   const platforms = [
     { x: 55, y: 414, w: 235, depth: 64 },
@@ -77,7 +150,7 @@
     bird.vx+=direction*620*dt;bird.vx*=Math.exp(-(bird.grounded?5.5:1.5)*dt);bird.vx=Math.max(-245,Math.min(245,bird.vx));
     if(direction)bird.facing=direction;
     flapClock=Math.max(0,flapClock-dt);
-    if(keys.has('Space')&&flapClock<=0){bird.vy=Math.max(-310,bird.vy-185);bird.grounded=false;flapClock=.17;bird.wing=Math.PI/2;burst(bird.x-8*bird.facing,bird.y+8,3,'#e2e8bf');}
+    if(keys.has('Space')&&flapClock<=0){playWingSound(bird.grounded);bird.vy=Math.max(-310,bird.vy-185);bird.grounded=false;flapClock=.17;bird.wing=Math.PI/2;burst(bird.x-8*bird.facing,bird.y+8,3,'#e2e8bf');}
     bird.vy=Math.min(360,bird.vy+590*dt);
     const oldFeet=bird.y+19;
     bird.x+=bird.vx*dt;bird.y+=bird.vy*dt;bird.grounded=false;
@@ -97,9 +170,9 @@
     for(let i=0;i<22;i++){const x=(noise(i+800)*W+Math.sin(time*.3+i)*15),y=180+noise(i+850)*330+Math.cos(time*.5+i)*10;ellipse(x,y,1.2,1.2,`rgba(218,231,166,${.12+(Math.sin(time+i)+1)*.12})`);}
     particles.forEach(p=>{ctx.globalAlpha=p.life/p.max;ellipse(p.x,p.y,2,1,p.color);});ctx.globalAlpha=1;stork();
   }
-  function resetBird(){Object.assign(bird,{x:172,y:395,vx:0,vy:0,facing:1,grounded:true,wing:0});particles=[];flapClock=0;}
-  function start(){mode='playing';overlay.classList.add('hidden');pauseButton.innerHTML='Ⅱ <span>Pauza</span>';pauseButton.setAttribute('aria-label','Wstrzymaj grę');canvas.focus({preventScroll:true});}
-  function pause(){if(mode==='ready')return;if(mode==='paused'){start();return;}mode='paused';keys.clear();overlay.classList.remove('hidden');overlay.querySelector('h2').textContent='Chwila oddechu.';overlay.querySelector('p').innerHTML='Rozlewisko poczeka.<br>Wróć do lotu, kiedy zechcesz.';overlay.querySelector('button').innerHTML='Lecimy dalej <span>↗</span>';pauseButton.innerHTML='▶ <span>Wznów</span>';pauseButton.setAttribute('aria-label','Wznów grę');status.textContent='PAUZA';}
+  function resetBird(){stopSounds();Object.assign(bird,{x:172,y:395,vx:0,vy:0,facing:1,grounded:true,wing:0});particles=[];flapClock=0;}
+  function start(){unlockAudio();mode='playing';overlay.classList.add('hidden');pauseButton.innerHTML='Ⅱ <span>Pauza</span>';pauseButton.setAttribute('aria-label','Wstrzymaj grę');canvas.focus({preventScroll:true});}
+  function pause(){if(mode==='ready')return;if(mode==='paused'){start();return;}mode='paused';stopSounds();keys.clear();overlay.classList.remove('hidden');overlay.querySelector('h2').textContent='Chwila oddechu.';overlay.querySelector('p').innerHTML='Rozlewisko poczeka.<br>Wróć do lotu, kiedy zechcesz.';overlay.querySelector('button').innerHTML='Lecimy dalej <span>↗</span>';pauseButton.innerHTML='▶ <span>Wznów</span>';pauseButton.setAttribute('aria-label','Wznów grę');status.textContent='PAUZA';}
   document.querySelector('#start').addEventListener('click',start);
   pauseButton.addEventListener('click',pause);
   document.querySelector('#reset').addEventListener('click',()=>{keys.clear();resetBird();start();});
@@ -113,3 +186,4 @@
   window.addEventListener('resize',resize);resize();
   function frame(now){if(!last)last=now;accumulator+=Math.min((now-last)/1000,.05);last=now;while(accumulator>=1/120){step(1/120);accumulator-=1/120;}draw();requestAnimationFrame(frame);}requestAnimationFrame(frame);
 })();
+

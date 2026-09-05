@@ -5,7 +5,7 @@ const noop = () => {};
 const elements = new Map();
 const ctx = new Proxy({createLinearGradient: () => ({addColorStop: noop}), createRadialGradient: () => ({addColorStop: noop})}, {get: (o,k) => o[k] || noop, set: (o,k,v) => (o[k]=v,true)});
 function element(id) {
-  if (!elements.has(id)) elements.set(id, {textContent:'', innerHTML:'', classList:{add:noop,remove:noop}, setAttribute:noop, addEventListener:noop, focus:noop, getContext:()=>ctx, querySelector:s=>element(id+s)});
+  if (!elements.has(id)) elements.set(id, {textContent:'', innerHTML:'', classList:{add:noop,remove:noop}, setAttribute:noop, handlers:{}, addEventListener(event,handler){this.handlers[event]=handler;}, focus:noop, getContext:()=>ctx, querySelector:s=>element(id+s)});
   return elements.get(id);
 }
 const sandbox = {document:{querySelector:element,querySelectorAll:()=>[],addEventListener:noop},window:{addEventListener:noop,devicePixelRatio:1},requestAnimationFrame:noop,HTMLButtonElement:class{},Math};
@@ -25,3 +25,34 @@ for(const p of t.platforms){Object.assign(t.bird,{x:p.x+p.w/2,y:p.y-21,vx:0,vy:2
 Object.assign(t.bird,{x:460,y:337,vx:0,vy:-250}); advance(25); assert(t.bird.y<315); assert(!t.bird.grounded);
 t.draw();
 console.log('PASS: resting, flight, gravity, steering, pause, wrap, respawn, all six platform landings, one-way passage, drawing smoke check.');
+
+// Test event timing and lifecycle separately from subjective sound quality.
+const played = [];
+const param = () => ({value:0,setValueAtTime:noop,linearRampToValueAtTime:noop,exponentialRampToValueAtTime:noop});
+function audioNode(kind) {
+  return {gain:param(),frequency:param(),Q:param(),playbackRate:param(),connect:noop,disconnect:noop,
+    start(){played.push(this);},stop(){this.stopped=true;},kind};
+}
+let contexts = 0;
+sandbox.window.AudioContext = class {
+  constructor(){contexts++;this.state='running';this.currentTime=0;this.sampleRate=44100;this.destination={};}
+  createGain(){return audioNode('gain');}
+  createBiquadFilter(){return audioNode('filter');}
+  createBuffer(){return {getChannelData:()=>new Float32Array(13230)};}
+  createBufferSource(){return audioNode('wing');}
+  createOscillator(){return audioNode('takeoff');}
+};
+assert.equal(contexts,0);
+t.start(); assert.equal(contexts,1);
+Object.assign(t.bird,{x:172,y:395,vx:0,vy:0,grounded:true});
+t.keys.add('Space'); advance(1);
+assert.deepEqual(played.map(n=>n.kind),['wing','takeoff']);
+advance(60);
+assert.equal(played.filter(n=>n.kind==='takeoff').length,1);
+assert(played.filter(n=>n.kind==='wing').length>=3);
+element('#sound').handlers.click();
+const mutedCount=played.length; advance(60); assert.equal(played.length,mutedCount);
+element('#sound').handlers.click(); advance(24); assert(played.length>mutedCount);
+t.pause(); const pausedCount=played.length; advance(60); assert.equal(played.length,pausedCount);
+t.start(); assert.equal(contexts,1);
+console.log('PASS: audio initialized on start, takeoff once, repeated wing beats, mute/unmute, pause, single AudioContext. Audio output requires a browser listening check.');

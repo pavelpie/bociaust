@@ -13,12 +13,15 @@ Otwórz `index.html` w przeglądarce. Nie wymaga instalacji ani budowania projek
 - **P / Escape** — pauza i wznowienie.
 - **Od nowa** — powrót do gniazda.
 - Na telefonie dostępne są przyciski dotykowe.
+- **Dźwięk wł./wył.** — wycisza efekty. Każde machnięcie odtwarza krótki szum, a odbicie od platformy dodatkowy wznoszący ton. Dźwięk uruchamia się po rozpoczęciu gry; pauza go przerywa.
 
 Platformy przepuszczają bociana od dołu i zatrzymują przy opadaniu. Bocian przelatuje przez boczne krawędzie ekranu. Spadek poniżej sceny przenosi go do gniazda. Utrata fokusu okna automatycznie wstrzymuje grę.
 
 ## Technologia
 
 Native JavaScript + Canvas 2D + CSS. Na ten zakres framework i silnik gry dodawałyby zbędne zależności. Grafika jest rysowana proceduralnie, bez zewnętrznych obrazów. Fizyka ma stały krok 1/120 s, niezależny od częstotliwości odświeżania ekranu. `game.js` zawiera scenę, fizykę, rysowanie i wejście; `style.css` odpowiada za stronę i układ mobilny.
+
+Efekty dźwiękowe są syntezowane przez Web Audio API, bez plików audio i dodatkowych zależności. Brak obsługi audio nie blokuje gry. Dźwięk oderwania jest wyzwalany przez machnięcie na platformie, nie przez samo zsunięcie się z krawędzi.
 
 ## Weryfikacja
 
