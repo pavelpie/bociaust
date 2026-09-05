@@ -99,6 +99,7 @@
     canvas.focus({preventScroll:true});
   });
   const W = 1200, H = 580;
+  let collectibleScale = 1;
   const platforms = [];
   let seed = Math.floor(Math.random()*4294967296), level = 1, biome;
   let levelTime = 0, results = [], collected = 0, transitionTime = 0, resumeMode = 'playing';
@@ -197,12 +198,21 @@
   function collectible(p,index) {
     const item=p.item;
     if(item.collected) {
+      ctx.save();ctx.translate(item.x,p.y-15);ctx.scale(collectibleScale,collectibleScale);
       ctx.strokeStyle=biome.accent;ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(item.x-4,p.y-15);ctx.lineTo(item.x-1,p.y-12);ctx.lineTo(item.x+5,p.y-19);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-4,0);ctx.lineTo(-1,3);ctx.lineTo(5,-4);ctx.stroke();
+      ctx.restore();
       return;
     }
-    const x=item.x,y=item.y+Math.sin(time*2+index)*2;
-    ellipse(x,y,19,19,item.golden?'#ffe29826':'#eff4d519');
+    // Keep the actual icon readable in screen pixels, even with the entire
+    // 1200-unit world fitted into a narrow phone screen.
+    ctx.save();
+    ctx.translate(item.x,item.y+Math.sin(time*2+index)*2);
+    ctx.scale(collectibleScale,collectibleScale);
+    const x=0,y=0;
+    ellipse(x,y,16,16,'#142c35e8');
+    ctx.strokeStyle=item.golden?'#ffe298':biome.accent;ctx.lineWidth=1.3;
+    ctx.beginPath();ctx.ellipse(x,y,16,16,0,0,Math.PI*2);ctx.stroke();
     if(item.type==='egg') {
       ellipse(x,y,8,11,item.golden?'#ffe298':'#f4edd7');
       ellipse(x-2,y-4,2,3,'#fff9eb');ellipse(x+3,y+3,1.5,2,'#b6a68c');
@@ -217,6 +227,7 @@
       ellipse(x-5,y-5,4,4,color);ellipse(x+5,y-5,4,4,color);
       ellipse(x-5,y-6,1.4,1.8,'#263b37');ellipse(x+5,y-6,1.4,1.8,'#263b37');
     }
+    ctx.restore();
   }
   function stork() {
     ctx.save();ctx.translate(bird.x,bird.y);ctx.scale(bird.facing,1);ctx.rotate(Math.max(-.15,Math.min(.15,bird.vx/1400)));
@@ -298,7 +309,12 @@
   window.addEventListener('blur',()=>{keys.clear();if(mode==='playing'||mode==='transition')pause();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&(mode==='playing'||mode==='transition'))pause();});
   document.querySelectorAll('[data-key]').forEach(button=>{button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);if(mode==='ready'||mode==='paused')start();if(mode==='playing')keys.add(button.dataset.key);});const release=()=>keys.delete(button.dataset.key);button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);});
-  function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    const displayScale=Math.min((canvas.clientWidth||W)/W,(canvas.clientHeight||H)/H);
+    collectibleScale=Math.max(1,20/(16*displayScale));
+  }
   window.addEventListener('resize',resize);loadLevel(1);resize();
   function frame(now){if(!last)last=now;accumulator+=Math.min((now-last)/1000,.05);last=now;while(accumulator>=1/120){step(1/120);accumulator-=1/120;}draw();requestAnimationFrame(frame);}requestAnimationFrame(frame);
 })();
