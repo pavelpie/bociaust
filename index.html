@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101d23">
+  <title>Bociaust — sztuka latania</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Bociaust — strona główna"><span class="brand-icon">↗</span> BOCIAUST<span class="edition">FLIGHT STUDY / 001</span></a>
+      <span class="build"><i></i> INTERAKTYWNY PROTOTYP</span>
+    </header>
+    <section class="intro">
+      <div><div class="eyebrow">MAŁA GRA. WIELKIE SKRZYDŁA.</div><h1>Złap swój <em>rytm.</em></h1><p>Jeden bocian, kilka wysp i cała przestrzeń do odkrycia.</p></div>
+      <div class="scene-label"><span>01 / NAD ROZLEWISKIEM</span><small>Swobodny lot · inspirowany Joust</small></div>
+    </section>
+    <section class="game-shell" aria-label="Gra Bociaust">
+      <div class="game-top"><span><i></i> WOLNY LOT</span><div><button id="pause" aria-label="Wstrzymaj grę">Ⅱ <span>Pauza</span></button><button id="reset" aria-label="Rozpocznij od nowa">↺ <span>Od nowa</span></button></div></div>
+      <canvas id="game" width="1200" height="580" tabindex="0" aria-label="Bocian latający między platformami. Strzałki lub A i D kierują lotem, spacja macha skrzydłami, P pauzuje."></canvas>
+      <div class="overlay" id="overlay"><div class="overlay-icon">↗</div><div class="eyebrow">NIE SPIESZ SIĘ. PO PROSTU LEĆ.</div><h2>Rozwiń skrzydła.</h2><p>Naciskaj spację, by wzbić się w powietrze.<br>Znajdź swój rytm i odpocznij na platformach.</p><button id="start">Zaczynamy <span>↗</span></button><small>lub naciśnij spację</small></div>
+      <div class="game-bottom"><span id="status" aria-live="polite">GOTOWY DO LOTU</span><span id="altitude">WYSOKOŚĆ <b>0</b> M</span></div>
+    </section>
+    <section class="controls" aria-label="Sterowanie"><div><span class="control-number">01</span><span><kbd>←</kbd> <kbd>→</kbd><span class="or">/</span><kbd>A</kbd> <kbd>D</kbd></span><p>Wybierz kierunek</p></div><div><span class="control-number">02</span><kbd class="space">SPACJA</kbd><p>Machaj skrzydłami <small>Przytrzymaj, by lecieć wyżej</small></p></div><div><span class="control-number">03</span><span class="landing-icon">↘</span><p>Zwolnij i wyląduj <small>Platformy dają chwilę oddechu</small></p></div></section>
+    <div class="touch-controls"><button data-key="ArrowLeft" aria-label="Leć w lewo">←</button><button data-key="Space">Machaj ↗</button><button data-key="ArrowRight" aria-label="Leć w prawo">→</button></div>
+    <footer><span>BOCIAUST <span class="muted">/ Eksperyment z lekkością.</span></span><span>Bez pośpiechu. Bez punktów. Tylko lot. <span class="footer-star">✳</span></span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
