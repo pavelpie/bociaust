@@ -8,6 +8,8 @@ Otwórz `index.html` w przeglądarce. Bez instalacji i budowania. Google Fonts s
 
 Na GitHub Pages umieść razem: `index.html`, `style.css`, **`levels.js`** i `game.js`. Plik `levels.js` jest nowym, wymaganym elementem gry. W repozytorium ustaw Settings → Pages → Deploy from a branch → main → / (root).
 
+Odwołania do CSS i JavaScript w `index.html` mają wspólny numer wersji `?v=1`. Przy kolejnych zmianach któregokolwiek z tych plików zwiększ wszystkie trzy numery o 1 (raz na zestaw zmian) i opublikuj także `index.html`. Nowy adres zasobu pozwala ominąć jego poprzednią kopię w pamięci przeglądarki po pobraniu aktualnego HTML; nie przeładowuje już otwartej gry.
+
 ## Zasady i sterowanie
 
 - **A/D lub ←/→** — kierunek lotu z bezwładnością.
